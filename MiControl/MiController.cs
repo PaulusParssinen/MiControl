@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using System.Linq;
+using System.Drawing;
 
 namespace MiControl
 {
@@ -23,7 +24,7 @@ namespace MiControl
         private int _sequentialByte = 0x01;
 
         private byte[] _getPrefixBytes(byte id)
-            => new byte[] { 0x80, _filler, _filler, _filler, 0x11, id, _filler, _filler, (byte)(++_sequentialByte % 256), _filler };
+            => new byte[] { 0x80, _filler, _filler, _filler, 0x11, id, _filler, _filler, (byte)(++_sequentialByte & 0xFF), _filler };
 
         public MiController(string ip, byte zone = 1, int port = 5987)
         {
@@ -69,7 +70,6 @@ namespace MiControl
         public void SendRaw(byte[] rawCommand)
         {
             _client.Send(rawCommand);
-            Receive(); // just to wait for a reply
         }
 
         public void SendCommand(byte[] command)
@@ -100,5 +100,14 @@ namespace MiControl
 
         public void TurnOff()
             => SendCommand(MiCommands.TurnOff);
+
+        public void NightMode()
+            => SendCommand(MiCommands.NightMode);
+
+        public void SetBrightness(byte percentage)
+            => SendCommand(MiCommands.SetBrightness(percentage));
+
+        public void SetColor(Color color)
+            => SendCommand(MiCommands.SetColor(color));
     }
 }

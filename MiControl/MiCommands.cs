@@ -1,6 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Drawing;
 
 namespace MiControl
 {
@@ -14,5 +13,18 @@ namespace MiControl
 
         public static readonly byte[] TurnOn = new byte[] { 49, 0, 0, 7, 3, 1, 1, 1, 1 };
         public static readonly byte[] TurnOff = new byte[] { 49, 0, 0, 7, 3, 2, 2, 2, 2 };
+        public static readonly byte[] NightMode = new byte[] { 49, 0, 0, 7, 3, 6, 6, 6, 6 };
+
+        public static byte[] SetBrightness(byte percentage)
+        {
+            percentage = (byte)(percentage % 100);
+            return new byte[] { 49, 0, 0, 7, 2, percentage, percentage, percentage, percentage };
+        }
+
+        public static byte[] SetColor(Color color)
+        {
+            byte hue = MiHelpers.GetMilightHue(color);
+            return new byte[] { 49, 0, 0, 7, 1, hue, hue, hue, hue };
+        }
     }
 }
