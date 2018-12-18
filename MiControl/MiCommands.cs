@@ -1,5 +1,4 @@
-﻿using System;
-using System.Drawing;
+﻿using System.Drawing;
 
 namespace MiControl
 {
@@ -18,7 +17,7 @@ namespace MiControl
 
         public static byte[] SetBrightness(byte percentage)
         {
-            percentage = (byte)(percentage % 100);
+            percentage %= 100;
             return new byte[] { 49, 0, 0, 7, 2, percentage, percentage, percentage, percentage };
         }
 
@@ -30,8 +29,7 @@ namespace MiControl
 
         public static byte[] SetPartyMode(MiMode mode)
         {
-            byte modeByte = (byte)mode;
-            return new byte[] { 49, 0, 0, 7, 4, modeByte, modeByte, modeByte, modeByte };
+            return new byte[] { 49, 0, 0, 7, 4, (byte)mode, (byte)mode, (byte)mode, (byte)mode };
         }
     }
 }

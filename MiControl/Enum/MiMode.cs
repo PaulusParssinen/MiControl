@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace MiControl
+﻿namespace MiControl
 {
-    public enum MiMode
+    public enum MiMode : byte
     {
         RainbowFade,
         WhiteFadeOnOff,
