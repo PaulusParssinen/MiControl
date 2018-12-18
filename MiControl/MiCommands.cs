@@ -14,6 +14,7 @@ namespace MiControl
         public static readonly byte[] TurnOn = new byte[] { 49, 0, 0, 7, 3, 1, 1, 1, 1 };
         public static readonly byte[] TurnOff = new byte[] { 49, 0, 0, 7, 3, 2, 2, 2, 2 };
         public static readonly byte[] NightMode = new byte[] { 49, 0, 0, 7, 3, 6, 6, 6, 6 };
+        public static readonly byte[] SetWhite = new byte[] { 49, 0, 0, 7, 3, 5, 5, 5, 5 };
 
         public static byte[] SetBrightness(byte percentage)
         {
@@ -25,6 +26,12 @@ namespace MiControl
         {
             byte hue = MiHelpers.GetMilightHue(color);
             return new byte[] { 49, 0, 0, 7, 1, hue, hue, hue, hue };
+        }
+
+        public static byte[] SetPartyMode(MiMode mode)
+        {
+            byte modeByte = (byte)mode;
+            return new byte[] { 49, 0, 0, 7, 4, modeByte, modeByte, modeByte, modeByte };
         }
     }
 }

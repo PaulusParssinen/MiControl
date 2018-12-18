@@ -43,7 +43,6 @@ namespace MiControl
             {
                 _client.Send(MiCommands.Handshake);
                 byte[] data = Receive();
-
                 BridgeId = data[19];
             }
 
@@ -109,5 +108,11 @@ namespace MiControl
 
         public void SetColor(Color color)
             => SendCommand(MiCommands.SetColor(color));
+
+        public void SetWhite()
+            => SendCommand(MiCommands.SetWhite);
+
+        public void SetPartyMode(MiMode mode)
+            => SendCommand(MiCommands.SetPartyMode(mode));
     }
 }
