@@ -1,6 +1,6 @@
 ﻿namespace MiControl
 {
-    public enum MiMode : byte
+    public enum MiPartyMode : byte
     {
         RainbowFade,
         WhiteFadeOnOff,

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Drawing;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using MiControl.Effects;
 
 namespace MiControl
 {
@@ -113,8 +114,44 @@ namespace MiControl
         public void SetWhite()
             => SendCommand(MiCommands.SetWhite);
 
-        public void SetPartyMode(MiMode mode)
+        public void SetPartyMode(MiPartyMode mode)
             => SendCommand(MiCommands.SetPartyMode(mode));
+
+        public void PlayEffect(MiEffect effect)
+            => Task.Factory.StartNew(() => ExecuteEffect(effect));
+
+        private async void ExecuteEffect(MiEffect effect)
+        {
+            int counter = effect.EndType == MiEffectEnd.Once ? 1 : effect.IterationCount;
+
+            while (counter > 0 || effect.EndType == MiEffectEnd.Infinite)
+            {
+                foreach (IMiEffectBase effectPart in effect.EffectParts)
+                {
+                    switch (effectPart.GetType().Name)
+                    {
+                        case "MiColorEffect":
+                        {
+                            MiColorEffect part = (MiColorEffect)effectPart;
+                            SetColor(part.EffectColor);
+                            break;
+                        }
+                        case "MiBrightnessEffect":
+                        {
+                            MiBrightnessEffect part = (MiBrightnessEffect)effectPart;
+                            SetBrightness(part.Percentage);
+                            break;
+                        }
+                        //TODO: we definitely need other cases here at some point
+                        // also possibly not hardcode the classnames like that
+                    }
+
+                    await Task.Delay(effectPart.Duration);
+                }
+
+                counter--;
+            }
+        }
 
         public void Dispose()
         {

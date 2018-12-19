@@ -10,26 +10,26 @@ namespace MiControl
                 0x2d, 0x46, 0x61, 0x41, 0xa7, 0xf6, 0xdc,
                 0xaf, 0xfe, 0xf7, 0x00, 0x00, 0x1e };
 
-        public static readonly byte[] TurnOn = new byte[] { 49, 0, 0, 7, 3, 1, 1, 1, 1 };
-        public static readonly byte[] TurnOff = new byte[] { 49, 0, 0, 7, 3, 2, 2, 2, 2 };
-        public static readonly byte[] NightMode = new byte[] { 49, 0, 0, 7, 3, 6, 6, 6, 6 };
-        public static readonly byte[] SetWhite = new byte[] { 49, 0, 0, 7, 3, 5, 5, 5, 5 };
+        public static readonly byte[] TurnOn = new byte[] { 0x31, 0x00, 0x00, 0x07, 0x03, 0x01, 0x01, 0x01, 0x01 };
+        public static readonly byte[] TurnOff = new byte[] { 0x31, 0x00, 0x00, 0x07, 0x03, 0x02, 0x02, 0x02, 0x02 };
+        public static readonly byte[] NightMode = new byte[] { 0x31, 0x00, 0x00, 0x07, 0x03, 0x06, 0x06, 0x06, 0x06 };
+        public static readonly byte[] SetWhite = new byte[] { 0x31, 0x00, 0x00, 0x07, 0x03, 0x05, 0x05, 0x05, 0x05 };
 
         public static byte[] SetBrightness(byte percentage)
         {
             percentage %= 100;
-            return new byte[] { 49, 0, 0, 7, 2, percentage, percentage, percentage, percentage };
+            return new byte[] { 0x31, 0x00, 0x00, 0x07, 0x02, percentage, percentage, percentage, percentage };
         }
 
         public static byte[] SetColor(Color color)
         {
             byte hue = MiHelpers.GetMilightHue(color);
-            return new byte[] { 49, 0, 0, 7, 1, hue, hue, hue, hue };
+            return new byte[] { 0x31, 0x00, 0x00, 0x07, 0x01, hue, hue, hue, hue };
         }
 
-        public static byte[] SetPartyMode(MiMode mode)
+        public static byte[] SetPartyMode(MiPartyMode mode)
         {
-            return new byte[] { 49, 0, 0, 7, 4, (byte)mode, (byte)mode, (byte)mode, (byte)mode };
+            return new byte[] { 0x31, 0x00, 0x00, 0x07, 0x04, (byte)mode, (byte)mode, (byte)mode, (byte)mode };
         }
     }
 }

@@ -26,7 +26,6 @@ namespace MiControl
         }
 
         //Thanks https://github.com/happyleavesaoc
-
         public static byte GetMilightHue(Color color)
         {
             float hue = color.GetHue() / 360;
