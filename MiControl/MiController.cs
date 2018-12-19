@@ -2,8 +2,10 @@
 using System.Net;
 using System.Linq;
 using System.Drawing;
+using System.Threading;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+
 using MiControl.Effects;
 
 namespace MiControl
@@ -21,11 +23,13 @@ namespace MiControl
         public byte Zone { get; private set; }
 
         private readonly Socket _client;
-        private int _sequentialByte = 0x01;
+
+        private byte _sequentialByte = 0x01;
         private byte[] _lastUsedCommand;
 
+
         public MiController(string ip, int port = 5987, byte zone = 1)
-            : this(new IPEndPoint(IPAddress.Parse(ip), port))
+            : this(new IPEndPoint(IPAddress.Parse(ip), port), zone)
         { }
         public MiController(IPEndPoint endpoint, byte zone = 1)
         {
@@ -50,15 +54,7 @@ namespace MiControl
             Task.Factory.StartNew(KeepAliveAsync);
             return Connected = _client.Connected;
         }
-
-        public void Close()
-        {
-            Connected = false;
-            Open = false;
-            _client.Shutdown(SocketShutdown.Both);
-            _client.Close();
-        }
-
+        
         public byte[] Receive(int bufferSize = 128)
         {
             byte[] buffer = new byte[bufferSize];
@@ -66,12 +62,7 @@ namespace MiControl
             return buffer;
         }
 
-        private void SendRaw(byte[] rawCommand)
-        {
-            _client.Send(rawCommand);
-        }
-
-        private void SendCommand(byte[] command, bool updateLastUsed = true)
+        public void SendCommand(byte[] command, bool updateLastUsed = true)
         {
             byte[] prefix = GetCommandPrefix(BridgeId);
             byte[] toSum = MiHelpers.Combine(command, new byte[] { Zone, 0x00 });
@@ -80,7 +71,7 @@ namespace MiControl
             if (updateLastUsed)
                 _lastUsedCommand = command;
 
-            SendRaw(cmd);
+            _client.Send(cmd);
         }
 
         private async Task KeepAliveAsync()
@@ -89,7 +80,7 @@ namespace MiControl
 
             while (Connected)
             {
-                SendRaw(keepAliveCommand);
+                _client.Send(keepAliveCommand);
                 await Task.Delay(5000);
             }
 
@@ -99,71 +90,35 @@ namespace MiControl
 
         private byte[] GetCommandPrefix(byte id)
             => new byte[] { 0x80, 0x00, 0x00, 0x00, 0x11, id, 0x00, 0x00, (byte)(++_sequentialByte & 0xFF), 0x00 };
-
-        public void TurnOn()
-            => SendCommand(MiCommands.TurnOn);
-
-        public void TurnOff()
-            => SendCommand(MiCommands.TurnOff);
-
-        public void NightMode()
-            => SendCommand(MiCommands.NightMode);
-
-        public void SetBrightness(byte percentage)
-            => SendCommand(MiCommands.SetBrightness(percentage));
-
-        public void SetColor(Color color)
-            => SendCommand(MiCommands.SetColor(color));
-
-        public void SetWhite()
-            => SendCommand(MiCommands.SetWhite);
-
-        public void SetPartyMode(MiPartyMode mode)
-            => SendCommand(MiCommands.SetPartyMode(mode));
-
-        public void PlayEffect(MiEffect effect)
-            => Task.Factory.StartNew(() => ExecuteEffect(effect));
-
-        private async void ExecuteEffect(MiEffect effect)
+        
+        public void ApplyEffect(IMiEffect effect)
         {
-            int counter = effect.EndType == MiEffectEnd.Once ? 1 : effect.IterationCount;
+            effect.Execute(this);
+        }
 
-            while (counter > 0 || effect.EndType == MiEffectEnd.Infinite)
+        public void RunSequence(MiEffectSequence sequence, CancellationToken cancellationToken = default)
+        {
+            Task.Run(async () =>
             {
-                foreach (IMiEffectBase effectPart in effect.EffectParts)
+                foreach (var effect in sequence)
                 {
-                    switch (effectPart.GetType().Name)
-                    {
-                        case nameof(MiColorEffect):
-                        {
-                            MiColorEffect part = (MiColorEffect)effectPart;
-                            SendCommand(MiCommands.SetColor(part.EffectColor), false);
-                            break;
-                        }
-                        case nameof(MiBrightnessEffect):
-                        {
-                            MiBrightnessEffect part = (MiBrightnessEffect)effectPart;
-                            SendCommand(MiCommands.SetBrightness(part.Percentage), false);
-                            break;
-                        }
-                        case nameof(MiLastCommandEffect):
-                        {
-                            MiLastCommandEffect part = (MiLastCommandEffect)effectPart;
-
-                            if (_lastUsedCommand != null)
-                                SendCommand(_lastUsedCommand, false);
-                            break;
-                        }
-                        //TODO: we definitely need other cases here at some point
-                        // also possibly not hardcode the classnames like that
-                        // also save last used command (other than effects) so that we can play effects and then go back to whatever the lights were doing previously
-                    }
-
-                    await Task.Delay(effectPart.Duration);
+                    effect.Execute(this);
+                    await Task.Delay(effect.Duration);
                 }
+            }, cancellationToken);
+        }
 
-                counter--;
-            }
+        public void ApplyColor(Color color) => ApplyEffect(new MiApplyColor(color));
+        public void SetBrightness(byte percentage) => ApplyEffect(new MiSetBrightness(percentage));
+        public void ApplyPartyMode(MiPartyMode partyMode) => ApplyEffect(new MiApplyPartyMode(partyMode));
+
+        public void Close()
+        {
+            Connected = false;
+            Open = false;
+
+            _client.Shutdown(SocketShutdown.Both);
+            _client.Close();
         }
 
         public void Dispose()

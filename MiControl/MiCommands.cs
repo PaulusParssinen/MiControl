@@ -21,7 +21,7 @@ namespace MiControl
             return new byte[] { 0x31, 0x00, 0x00, 0x07, 0x02, percentage, percentage, percentage, percentage };
         }
 
-        public static byte[] SetColor(Color color)
+        public static byte[] ApplyColor(Color color)
         {
             byte hue = MiHelpers.GetMilightHue(color);
             return new byte[] { 0x31, 0x00, 0x00, 0x07, 0x01, hue, hue, hue, hue };
