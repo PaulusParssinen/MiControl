@@ -22,6 +22,7 @@ namespace MiControl
 
         private readonly Socket _client;
         private int _sequentialByte = 0x01;
+        private byte[] _lastUsedCommand;
 
         public MiController(string ip, int port = 5987, byte zone = 1)
             : this(new IPEndPoint(IPAddress.Parse(ip), port))
@@ -65,16 +66,19 @@ namespace MiControl
             return buffer;
         }
 
-        public void SendRaw(byte[] rawCommand)
+        private void SendRaw(byte[] rawCommand)
         {
             _client.Send(rawCommand);
         }
 
-        public void SendCommand(byte[] command)
+        private void SendCommand(byte[] command, bool updateLastUsed = true)
         {
             byte[] prefix = GetCommandPrefix(BridgeId);
             byte[] toSum = MiHelpers.Combine(command, new byte[] { Zone, 0x00 });
             byte[] cmd = MiHelpers.Combine(prefix, toSum, new byte[] { (byte)toSum.Sum(x => x) });
+
+            if (updateLastUsed)
+                _lastUsedCommand = command;
 
             SendRaw(cmd);
         }
@@ -130,20 +134,29 @@ namespace MiControl
                 {
                     switch (effectPart.GetType().Name)
                     {
-                        case "MiColorEffect":
+                        case nameof(MiColorEffect):
                         {
                             MiColorEffect part = (MiColorEffect)effectPart;
-                            SetColor(part.EffectColor);
+                            SendCommand(MiCommands.SetColor(part.EffectColor), false);
                             break;
                         }
-                        case "MiBrightnessEffect":
+                        case nameof(MiBrightnessEffect):
                         {
                             MiBrightnessEffect part = (MiBrightnessEffect)effectPart;
-                            SetBrightness(part.Percentage);
+                            SendCommand(MiCommands.SetBrightness(part.Percentage), false);
+                            break;
+                        }
+                        case nameof(MiLastCommandEffect):
+                        {
+                            MiLastCommandEffect part = (MiLastCommandEffect)effectPart;
+
+                            if (_lastUsedCommand != null)
+                                SendCommand(_lastUsedCommand, false);
                             break;
                         }
                         //TODO: we definitely need other cases here at some point
                         // also possibly not hardcode the classnames like that
+                        // also save last used command (other than effects) so that we can play effects and then go back to whatever the lights were doing previously
                     }
 
                     await Task.Delay(effectPart.Duration);

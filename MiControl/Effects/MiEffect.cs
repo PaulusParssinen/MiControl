@@ -28,6 +28,12 @@ namespace MiControl.Effects
             return this;
         }
 
+        public MiEffect UseLastCommand(int duration = 500)
+        {
+            EffectParts.Add(new MiLastCommandEffect(duration));
+            return this;
+        }
+
         public MiEffect End(MiEffectEnd endType, int iterations = 0)
         {
             EndType = endType;
